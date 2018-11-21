@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-
 	dbusconn, err := dbus.SessionBus()
 	if err != nil {
 		panic(err)
@@ -37,42 +36,11 @@ func main() {
 func watchEvents(dbusconn *dbus.Conn, mpdconn *mpd.Client, watcher *mpd.Watcher) {
 	oldsummary := ""
 	oldbody := ""
-	summary := ""
-	body := ""
 	for event := range watcher.Event {
 		if event == "player" {
-			status, err := mpdconn.Status()
+			summary, body, err := BuildNotifyStrings(mpdconn)
 			if err != nil {
 				log.Fatalln(err)
-			}
-
-			song, err := mpdconn.CurrentSong()
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			artist, exist := song["Artist"]
-			if !exist {
-				artist = "No artist"
-			}
-
-			title, exist := song["Title"]
-			if !exist {
-				title = "No title"
-			}
-
-			album, albumExist := song["Album"]
-			track, exist := song["Track"]
-			if !exist {
-				track = "0"
-			}
-
-			summary = fmt.Sprintf("MPD: %s", status["state"])
-			if status["state"] != "stopped" {
-				body = fmt.Sprintf("%s\n%s", title, artist)
-				if albumExist {
-					body += fmt.Sprintf("\n#%s %s", track, album)
-				}
 			}
 
 			if summary != oldsummary || body != oldbody {
@@ -82,6 +50,45 @@ func watchEvents(dbusconn *dbus.Conn, mpdconn *mpd.Client, watcher *mpd.Watcher)
 			}
 		}
 	}
+}
+
+func BuildNotifyStrings(conn *mpd.Client) (string, string, error) {
+	status, err := conn.Status()
+	if err != nil {
+		return "", "", err
+	}
+
+	song, err := conn.CurrentSong()
+	if err != nil {
+		return "", "", err
+	}
+
+	artist, exist := song["Artist"]
+	if !exist {
+		artist = "No artist"
+	}
+
+	title, exist := song["Title"]
+	if !exist {
+		title = "No title"
+	}
+
+	album, albumExist := song["Album"]
+	track, exist := song["Track"]
+	if !exist {
+		track = "0"
+	}
+
+	summary := fmt.Sprintf("MPD: %s", status["state"])
+	body := ""
+	if status["state"] != "stopped" {
+		body = fmt.Sprintf("%s\n%s", title, artist)
+		if albumExist {
+			body += fmt.Sprintf("\n#%s %s", track, album)
+		}
+	}
+
+	return summary, body, nil
 }
 
 func sendNotification(dbusconn *dbus.Conn, summary string, body string) {

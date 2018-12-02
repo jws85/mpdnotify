@@ -1,7 +1,6 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"log"
 
@@ -17,31 +16,27 @@ func main() {
 		panic(err)
 	}
 
-	mpdconn, err := mpd.Dial("tcp", "localhost:6600")
-	if err != nil {
-		panic(err)
-	}
-
 	watcher, err := mpd.NewWatcher("tcp", "localhost:6600", "")
 	if err != nil {
 		panic(err)
 	}
 	defer watcher.Close()
 
-	go watchEvents(dbusconn, mpdconn, watcher)
-
-	time.Sleep(99 * time.Minute)
-}
-
-func watchEvents(dbusconn *dbus.Conn, mpdconn *mpd.Client, watcher *mpd.Watcher) {
 	oldsummary := ""
 	oldbody := ""
 	for event := range watcher.Event {
 		if event == "player" {
-			summary, body, err := BuildNotifyStrings(mpdconn)
+			mpdconn, err := mpd.Dial("tcp", "localhost:6600")
+			if err != nil {
+				panic(err)
+			}
+
+			summary, body, err := buildNotifyStrings(mpdconn)
 			if err != nil {
 				log.Fatalln(err)
 			}
+
+			mpdconn.Close()
 
 			if summary != oldsummary || body != oldbody {
 				oldbody = body
@@ -52,7 +47,7 @@ func watchEvents(dbusconn *dbus.Conn, mpdconn *mpd.Client, watcher *mpd.Watcher)
 	}
 }
 
-func BuildNotifyStrings(conn *mpd.Client) (string, string, error) {
+func buildNotifyStrings(conn *mpd.Client) (string, string, error) {
 	status, err := conn.Status()
 	if err != nil {
 		return "", "", err

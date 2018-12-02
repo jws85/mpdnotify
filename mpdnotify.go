@@ -10,13 +10,15 @@ import (
 	"github.com/godbus/dbus"
 )
 
+var MPD_SERVER = "localhost:6600"
+
 func main() {
 	dbusconn, err := dbus.SessionBus()
 	if err != nil {
 		panic(err)
 	}
 
-	watcher, err := mpd.NewWatcher("tcp", "localhost:6600", "")
+	watcher, err := mpd.NewWatcher("tcp", MPD_SERVER, "")
 	if err != nil {
 		panic(err)
 	}
@@ -26,7 +28,7 @@ func main() {
 	oldbody := ""
 	for event := range watcher.Event {
 		if event == "player" {
-			mpdconn, err := mpd.Dial("tcp", "localhost:6600")
+			mpdconn, err := mpd.Dial("tcp", MPD_SERVER)
 			if err != nil {
 				panic(err)
 			}

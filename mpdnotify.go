@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/fhs/gompd/mpd"
 
@@ -89,9 +91,14 @@ func buildNotifyStrings(conn *mpd.Client) (string, string, error) {
 }
 
 func sendNotification(dbusconn *dbus.Conn, summary string, body string) {
+	iconName := "emblem-music"
+	exe, err := os.Executable()
+	if err == nil {
+		iconName = filepath.Dir(exe) + "/music-note.svg"
+	}
+
 	// Basic usage
 	// Create a Notification to send
-	iconName := "mail-unread"
 	n := notify.Notification{
 		AppName:       "mpd",
 		ReplacesID:    uint32(0),
@@ -103,7 +110,7 @@ func sendNotification(dbusconn *dbus.Conn, summary string, body string) {
 	}
 
 	// Ship it!
-	_, err := notify.SendNotification(dbusconn, n)
+	_, err = notify.SendNotification(dbusconn, n)
 	if err != nil {
 		log.Printf("error sending notification: %v", err.Error())
 	}

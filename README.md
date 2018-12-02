@@ -1,13 +1,11 @@
 # What is this?
 
-This is a Linux/D-Bus notification daemon for MPD.
+This is a Linux/D-Bus notification daemon for MPD, written in Go.
 
 # How to install?
 
 ```bash
-go get github.com/fhs/gompd/mpd
-go get github.com/esiqveland/notify
-go build
+go get github.com/jws85/mpdnotify
 ```
 
 # Attributions

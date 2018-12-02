@@ -35,33 +35,31 @@ func main() {
 				panic(err)
 			}
 
-			summary, body, err := buildNotifyStrings(mpdconn)
+			status, err := mpdconn.Status()
 			if err != nil {
-				log.Fatalln(err)
+				panic(err)
 			}
+
+			song, err := mpdconn.CurrentSong()
+			if err != nil {
+				panic(err)
+			}
+
+			summary, body := buildNotifyStrings(song, status)
+			icon := getAlbumArt(song)
 
 			mpdconn.Close()
 
 			if summary != oldsummary || body != oldbody {
 				oldbody = body
 				oldsummary = summary
-				sendNotification(dbusconn, summary, body)
+				sendNotification(dbusconn, summary, body, icon)
 			}
 		}
 	}
 }
 
-func buildNotifyStrings(conn *mpd.Client) (string, string, error) {
-	status, err := conn.Status()
-	if err != nil {
-		return "", "", err
-	}
-
-	song, err := conn.CurrentSong()
-	if err != nil {
-		return "", "", err
-	}
-
+func buildNotifyStrings(song mpd.Attrs, status mpd.Attrs) (string, string) {
 	artist, exist := song["Artist"]
 	if !exist {
 		artist = "No artist"
@@ -87,22 +85,28 @@ func buildNotifyStrings(conn *mpd.Client) (string, string, error) {
 		}
 	}
 
-	return summary, body, nil
+	return summary, body
 }
 
-func sendNotification(dbusconn *dbus.Conn, summary string, body string) {
-	iconName := "emblem-music"
+func getAlbumArt(song mpd.Attrs) string {
+	log.Printf("%s\n", song["file"])
+
+	icon := "emblem-music"
 	exe, err := os.Executable()
 	if err == nil {
-		iconName = filepath.Dir(exe) + "/music-note.svg"
+		icon = filepath.Dir(exe) + "/music-note.svg"
 	}
 
+	return icon
+}
+
+func sendNotification(dbusconn *dbus.Conn, summary string, body string, icon string) {
 	// Basic usage
 	// Create a Notification to send
 	n := notify.Notification{
 		AppName:       "mpd",
 		ReplacesID:    uint32(0),
-		AppIcon:       iconName,
+		AppIcon:       icon,
 		Summary:       summary,
 		Body:          body,
 		Hints:         map[string]dbus.Variant{},
@@ -110,7 +114,7 @@ func sendNotification(dbusconn *dbus.Conn, summary string, body string) {
 	}
 
 	// Ship it!
-	_, err = notify.SendNotification(dbusconn, n)
+	_, err := notify.SendNotification(dbusconn, n)
 	if err != nil {
 		log.Printf("error sending notification: %v", err.Error())
 	}

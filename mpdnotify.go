@@ -4,15 +4,20 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"io/ioutil"
 	"path/filepath"
+	"crypto/sha1" // digest "hash" for short strings
+	"encoding/base64" // digest "hash" for short strings
 
 	"github.com/fhs/gompd/mpd"
+	"github.com/dhowden/tag"
 
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus"
 )
 
 var MPD_SERVER = "localhost:6600"
+var MPD_DIRECTORY = "/home/jws/Music"
 
 func main() {
 	dbusconn, err := dbus.SessionBus()
@@ -89,8 +94,45 @@ func buildNotifyStrings(song mpd.Attrs, status mpd.Attrs) (string, string) {
 }
 
 func getAlbumArt(song mpd.Attrs) string {
-	log.Printf("%s\n", song["file"])
+	// Attempt to read from music file
+	songfile, err := os.Open(MPD_DIRECTORY + "/" + song["file"])
+	if err == nil {
+		data, err := tag.ReadFrom(songfile)
+		if err == nil {
+			picture := data.Picture()
 
+			if picture != nil {
+				// digest album art image so we don't create zillons of files in /tmp
+				hash := sha1.New()
+				hash.Write(picture.Data)
+				digest := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+				icon := fmt.Sprintf("/tmp/mpdnotify.%s.%s", digest, picture.Ext)
+
+				if _, err = os.Stat(icon); os.IsNotExist(err) {
+					ioutil.WriteFile(icon, picture.Data, 0644)
+				}
+
+				return icon
+			}
+		}
+	}
+
+	// Attempt to find file in music directory
+	songdir := MPD_DIRECTORY + "/" + filepath.Dir(song["file"])
+	if _, err = os.Stat(songdir + "/album.jpg"); err == nil {
+		return songdir + "/album.jpg"
+	}
+	if _, err = os.Stat(songdir + "/album.png"); err == nil {
+		return songdir + "/album.png"
+	}
+	if _, err = os.Stat(songdir + "/cover.jpg"); err == nil {
+		return songdir + "/cover.jpg"
+	}
+	if _, err = os.Stat(songdir + "/cover.png"); err == nil {
+		return songdir + "/cover.png"
+	}
+
+	// Fallback defaults
 	icon := "emblem-music"
 	exe, err := os.Executable()
 	if err == nil {

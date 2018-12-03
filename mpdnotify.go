@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"os"
 	"io/ioutil"
+	"os"
+	"os/user"
 	"path/filepath"
+
 	"crypto/sha1" // digest "hash" for short strings
 	"encoding/base64" // digest "hash" for short strings
 
@@ -16,16 +19,37 @@ import (
 	"github.com/godbus/dbus"
 )
 
-var MPD_SERVER = "localhost:6600"
-var MPD_DIRECTORY = "/home/jws/Music"
+type Config struct {
+	MPDServerURL string
+	MusicDirectory string
+	DefaultIcon string
+	PopupTimeout int32
+}
 
 func main() {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	var config Config
+	config.MPDServerURL = "localhost:6600"
+	config.MusicDirectory = usr.HomeDir + "/Music"
+	config.PopupTimeout = int32(5000)
+
+	// Default icon
+	config.DefaultIcon = "emblem-music"
+	exe, err := os.Executable()
+	if err == nil {
+		config.DefaultIcon = filepath.Dir(exe) + "/music-note.svg"
+	}
+
 	dbusconn, err := dbus.SessionBus()
 	if err != nil {
 		panic(err)
 	}
 
-	watcher, err := mpd.NewWatcher("tcp", MPD_SERVER, "")
+	watcher, err := mpd.NewWatcher("tcp", config.MPDServerURL, "")
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +59,7 @@ func main() {
 	oldbody := ""
 	for event := range watcher.Event {
 		if event == "player" {
-			mpdconn, err := mpd.Dial("tcp", MPD_SERVER)
+			mpdconn, err := mpd.Dial("tcp", config.MPDServerURL)
 			if err != nil {
 				panic(err)
 			}
@@ -51,14 +75,18 @@ func main() {
 			}
 
 			summary, body := buildNotifyStrings(song, status)
-			icon := getAlbumArt(song)
+
+			icon := config.DefaultIcon
+			if albumArt, err := getAlbumArt(config, song); err == nil {
+				icon = albumArt
+			}
 
 			mpdconn.Close()
 
 			if summary != oldsummary || body != oldbody {
 				oldbody = body
 				oldsummary = summary
-				sendNotification(dbusconn, summary, body, icon)
+				sendNotification(config, dbusconn, summary, body, icon)
 			}
 		}
 	}
@@ -93,9 +121,9 @@ func buildNotifyStrings(song mpd.Attrs, status mpd.Attrs) (string, string) {
 	return summary, body
 }
 
-func getAlbumArt(song mpd.Attrs) string {
+func getAlbumArt(config Config, song mpd.Attrs) (string, error) {
 	// Attempt to read from music file
-	songfile, err := os.Open(MPD_DIRECTORY + "/" + song["file"])
+	songfile, err := os.Open(config.MusicDirectory + "/" + song["file"])
 	if err == nil {
 		data, err := tag.ReadFrom(songfile)
 		if err == nil {
@@ -112,37 +140,31 @@ func getAlbumArt(song mpd.Attrs) string {
 					ioutil.WriteFile(icon, picture.Data, 0644)
 				}
 
-				return icon
+				return icon, nil
 			}
 		}
 	}
 
 	// Attempt to find file in music directory
-	songdir := MPD_DIRECTORY + "/" + filepath.Dir(song["file"])
+	songdir := config.MusicDirectory + "/" + filepath.Dir(song["file"])
 	if _, err = os.Stat(songdir + "/album.jpg"); err == nil {
-		return songdir + "/album.jpg"
+		return songdir + "/album.jpg", nil
 	}
 	if _, err = os.Stat(songdir + "/album.png"); err == nil {
-		return songdir + "/album.png"
+		return songdir + "/album.png", nil
 	}
 	if _, err = os.Stat(songdir + "/cover.jpg"); err == nil {
-		return songdir + "/cover.jpg"
+		return songdir + "/cover.jpg", nil
 	}
 	if _, err = os.Stat(songdir + "/cover.png"); err == nil {
-		return songdir + "/cover.png"
+		return songdir + "/cover.png", nil
 	}
 
-	// Fallback defaults
-	icon := "emblem-music"
-	exe, err := os.Executable()
-	if err == nil {
-		icon = filepath.Dir(exe) + "/music-note.svg"
-	}
-
-	return icon
+	// Couldn't find anything
+	return "", errors.New("Failed to find album art")
 }
 
-func sendNotification(dbusconn *dbus.Conn, summary string, body string, icon string) {
+func sendNotification(config Config, dbusconn *dbus.Conn, summary string, body string, icon string) {
 	// Basic usage
 	// Create a Notification to send
 	n := notify.Notification{
@@ -152,7 +174,7 @@ func sendNotification(dbusconn *dbus.Conn, summary string, body string, icon str
 		Summary:       summary,
 		Body:          body,
 		Hints:         map[string]dbus.Variant{},
-		ExpireTimeout: int32(5000),
+		ExpireTimeout: config.PopupTimeout,
 	}
 
 	// Ship it!

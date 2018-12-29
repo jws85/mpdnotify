@@ -1,0 +1,8 @@
+github.com/dhowden/tag v0.0.0-20181104225729-a9f04c2798ca h1:EsPh1VImRZ6OOhWtz/zzwTjxVQKcKIiqS5tYNdx2eCg=
+github.com/dhowden/tag v0.0.0-20181104225729-a9f04c2798ca/go.mod h1:SniNVYuaD1jmdEEvi+7ywb1QFR7agjeTdGKyFb0p7Rw=
+github.com/esiqveland/notify v0.0.0-20180502215543-1da6eb444e3b h1:OIcV3UxG+X2LVGJU2zhpbhy+GDRxWQgP5ekpjwSqbfA=
+github.com/esiqveland/notify v0.0.0-20180502215543-1da6eb444e3b/go.mod h1:0Pc0ae9aMYf8rEpw71fVs+6Gt7oAXUGuVH6GIvcWOic=
+github.com/fhs/gompd v2.0.0+incompatible h1:pv5XKTatya1k3r1woaWLwFQiF0BfAsgWSe5ev2XZ0UM=
+github.com/fhs/gompd v2.0.0+incompatible/go.mod h1:UVZXd9wmFBH5tIXLYeI+CGUIt15ZvtGQvVO6SDHy1os=
+github.com/godbus/dbus v4.1.0+incompatible h1:WqqLRTsQic3apZUK9qC5sGNfXthmPXzUZ7nQPrNITa4=
+github.com/godbus/dbus v4.1.0+incompatible/go.mod h1:/YcGZj5zSblfDWMMoOzV4fas9FZnQYTkDnsGvmh2Grw=

@@ -5,4 +5,5 @@ require (
 	github.com/esiqveland/notify v0.0.0-20180502215543-1da6eb444e3b
 	github.com/fhs/gompd v2.0.0+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible
+	github.com/mitchellh/go-homedir v1.0.0
 )

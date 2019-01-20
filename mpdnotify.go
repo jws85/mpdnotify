@@ -6,7 +6,6 @@ import (
 	"log"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"crypto/sha1" // digest "hash" for short strings
@@ -17,6 +16,8 @@ import (
 
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 type Config struct {
@@ -27,14 +28,9 @@ type Config struct {
 }
 
 func main() {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-
 	var config Config
 	config.MPDServerURL = "localhost:6600"
-	config.MusicDirectory = usr.HomeDir + "/Music"
+	config.MusicDirectory, _ = homedir.Expand("~/Music")
 	config.PopupTimeout = int32(5000)
 
 	// Default icon

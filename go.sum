@@ -1,3 +1,5 @@
+github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
+github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/dhowden/tag v0.0.0-20181104225729-a9f04c2798ca h1:EsPh1VImRZ6OOhWtz/zzwTjxVQKcKIiqS5tYNdx2eCg=
 github.com/dhowden/tag v0.0.0-20181104225729-a9f04c2798ca/go.mod h1:SniNVYuaD1jmdEEvi+7ywb1QFR7agjeTdGKyFb0p7Rw=
 github.com/esiqveland/notify v0.0.0-20180502215543-1da6eb444e3b h1:OIcV3UxG+X2LVGJU2zhpbhy+GDRxWQgP5ekpjwSqbfA=

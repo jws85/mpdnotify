@@ -17,6 +17,7 @@ import (
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus"
 
+	"github.com/BurntSushi/toml"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -29,15 +30,17 @@ type Config struct {
 
 func main() {
 	var config Config
+	var fileConfig Config
 	config.MPDServerURL = "localhost:6600"
 	config.MusicDirectory, _ = homedir.Expand("~/Music")
 	config.PopupTimeout = int32(5000)
-
-	// Default icon
 	config.DefaultIcon = "emblem-music"
-	exe, err := os.Executable()
-	if err == nil {
-		config.DefaultIcon = filepath.Dir(exe) + "/music-note.svg"
+
+	userConfigFile, _ := homedir.Expand("~/.config/mpdnotify/mpdnotify.toml")
+	if _, err := toml.DecodeFile(userConfigFile, &fileConfig); err == nil {
+		config = fileConfig
+		config.MusicDirectory, _ = homedir.Expand(config.MusicDirectory)
+		config.DefaultIcon, _ = homedir.Expand(config.DefaultIcon)
 	}
 
 	dbusconn, err := dbus.SessionBus()

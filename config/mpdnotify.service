@@ -1,0 +1,9 @@
+[Unit]
+Description=DBUS Notification for Music Player Daemon
+
+[Service]
+Type=Simple
+ExecStart=/home/jws/.local/bin/mpdnotify
+
+[Install]
+WantedBy=default.target

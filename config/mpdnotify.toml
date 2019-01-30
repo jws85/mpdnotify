@@ -10,4 +10,4 @@ PopupTimeout = 5000
 
 # The icon to display if there is no album art associated with the
 # music in question
-DefaultIcon = "~/.config/mpdnotify/music-note.svg"
+DefaultIcon = "~/.config/mpdnotify/default.svg"
